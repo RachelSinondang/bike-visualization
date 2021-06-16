@@ -1,0 +1,166 @@
+---
+title: "Untitled"
+author: "Rachel Sinondang"
+date: "6/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(plotly)
+library(ggplot2)
+library(glue)
+```
+
+```{r}
+theme_algoritma <- theme(legend.key = element_rect(fill="black"),
+           legend.background = element_rect(color="white", fill="#263238"),
+           plot.subtitle = element_text(size=6, color="white"),
+           panel.background = element_rect(fill="#dddddd"),
+           panel.border = element_rect(fill=NA),
+           panel.grid.minor.x = element_blank(),
+           panel.grid.major.x = element_blank(),
+           panel.grid.major.y = element_line(color="darkgrey", linetype=2),
+           panel.grid.minor.y = element_blank(),
+           plot.background = element_rect(fill="#263238"),
+           text = element_text(color="white"),
+           axis.text = element_text(color="white")
+           
+           )
+```
+
+```{r}
+bike <- read.csv("bike_buyers.csv")
+```
+
+```{r}
+bike <- bike %>%
+  select(-ï..ID) %>%
+  mutate(Marital.Status = as.factor(Marital.Status),
+         Gender = as.factor(Gender),
+         Education = as.factor(Education),
+         Occupation = as.factor(Occupation),
+         Home.Owner = as.factor(Home.Owner),
+         Commute.Distance = as.factor(Commute.Distance),
+         Region = as.factor(Region),
+         Purchased.Bike = as.factor(Purchased.Bike))
+
+bike[bike==""] <- NA
+
+bike <- bike %>% na.omit()
+```
+
+Berdasarkan kelompok umur, bagaimana perbandingan yes/no di setiap umur
+```{r}
+age <- bike %>%
+  filter(Region == "Europe") %>%
+  group_by(Age, Purchased.Bike) %>%
+  summarise(total = n())
+```
+
+```{r}
+age_plot <- ggplot(age, aes(fill=Purchased.Bike, y=total, x=Age,
+             text = glue("
+                         Total: {total}
+                         Purchased : {Purchased.Bike}"))) + 
+    geom_bar(position="stack", stat="identity") + theme_algoritma  +
+  labs(title = "Comparison of No/Yes Purchased Bike for every Ages",
+       x = 'Age',
+       y = NULL) + theme(legend.position = "none")
+
+ggplotly(age_plot, tooltip = "text")
+```
+
+
+Untuk married, adakah hubungan antara jumlah anak dan kepemilikan sepeda
+
+```{r}
+bike %>%
+  filter(Marital.Status == "Married") %>%
+  group_by(Children, Purchased.Bike) %>%
+  summarise(total = n())
+```
+
+Rerata income yang memiliki sepeda
+```{r}
+rerata <- bike %>%
+  filter(Purchased.Bike == "Yes", Occupation == "Skilled Manual") %>%
+  group_by(Region) %>%
+  summarise(rerata = mean(Income))
+```
+
+
+
+```{r}
+a <- bike %>%
+  group_by(Occupation, Cars, Purchased.Bike) %>%
+  summarise(total = n())
+```
+
+```{r}
+cars_plot <- ggplot(a, aes(fill=Purchased.Bike, y=total, x=Cars,
+             text = glue("
+                         Total: {total}
+                         Purchased : {Purchased.Bike}"))) + 
+    geom_bar(position="stack", stat="identity")+
+  facet_grid(~ Occupation) + theme_algoritma +
+  labs(title = "Comparison of No/Yes Purchased Bike while someone have some cars",
+       x = 'Total Cars',
+       y = NULL) + theme(legend.position = "none")
+
+ggplotly(cars_plot, tooltip = "text")
+```
+
+
+```{r}
+bike %>% 
+  filter(Purchased.Bike == "Yes") 
+```
+Semua berdasarkan region:
+Persebaran income yang memiliki bike
+Umur berapa paling banyak purchased bike
+Melihat karakteristik yang memiliki kemungkinan mau membeli bike
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+density_plot <- bike %>% 
+  filter(Purchased.Bike == "Yes",
+         Region == "North America") %>%
+  ggplot( aes(x=Income,
+             text = glue("
+                         Income: {Income}"))) +
+    geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8)+ theme_algoritma +
+  labs(title = "Density of Purchased Bike according to incomes",
+       x = 'Income',
+       y = NULL) + theme(legend.position = "none")
+
+ggplotly(density_plot, tooltip = "text")
+```
+
+```{r}
+b <- bike %>%
+  filter(Purchased.Bike == "Yes") %>%
+  group_by(Commute.Distance, Region) %>%
+  summarise(total = n())
+```
+
+
+```{r}
+commute_plot <- ggplot(b, aes(fill=Region, y=total, x=Commute.Distance,
+             text = glue("
+                         Total: {total}"))) + 
+    geom_bar(position="stack", stat="identity")+
+  facet_grid(~ Region) + theme_algoritma +
+  labs(title = "Total of Purchased Bike for every Commute Distance",
+       x = 'Commute Distance',
+       y = NULL) + theme(legend.position = "none")
+
+ggplotly(commute_plot, tooltip = "text")
+```
